@@ -1,6 +1,5 @@
-import React, {useCallback} from 'react'
-import Dropzone from 'react-dropzone'
-
+import React, {useCallback, useMemo} from 'react'
+import {useDropzone} from 'react-dropzone'
 
 const AWS = require('aws-sdk');
 const config = {
@@ -8,10 +7,10 @@ const config = {
     "secretAccessKey": "SSWpgFC+dJ/VMAAIVYmQMqiqtw9J2ffLc4ETjtEW",
     "region": "eu-west-1",
 }
+
 const s3 = new AWS.S3(config);
 
 function MyDropzone(props) {
-
     const onDrop = useCallback((acceptedFiles, id) => {
         let fileIndex = 0
         acceptedFiles.forEach((file) => {
@@ -32,7 +31,7 @@ function MyDropzone(props) {
                     if (err) {
                         throw err
                     }
-                    console.log(`File uploaded successfully. 
+                    console.log(`File uploaded successfully.
                               ${data.Location}`);
                 });
                 fileIndex++;
@@ -41,18 +40,60 @@ function MyDropzone(props) {
         })
         props.setFilesUploaded(props.filesUploaded + acceptedFiles.length)
     }, [])
+    const baseStyle = {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px',
+        borderWidth: 2,
+        borderRadius: 2,
+        borderColor: '#eeeeee',
+        borderStyle: 'dashed',
+        backgroundColor: '#fafafa',
+        color: '#bdbdbd',
+        outline: 'none',
+        transition: 'border .24s ease-in-out'
+    };
+
+    const focusedStyle = {
+        borderColor: '#2196f3'
+    };
+
+    const acceptStyle = {
+        borderColor: '#00663c'
+    };
+
+    const rejectStyle = {
+        borderColor: '#ff1744'
+    };
+    const {
+        acceptedFiles,
+        getRootProps,
+        getInputProps,
+        isFocused,
+        isDragAccept,
+        isDragReject,
+    } = useDropzone({onDrop}, {accept: 'text/csv'})
+    const style = useMemo(() => ({
+        ...baseStyle,
+        ...(isFocused ? focusedStyle : {}),
+        ...(isDragAccept ? acceptStyle : {}),
+        ...(isDragReject ? rejectStyle : {})
+    }), [
+        isFocused,
+        isDragAccept,
+        isDragReject
+    ]);
 
     return (
-        <Dropzone onDrop={acceptedFiles => onDrop(acceptedFiles, 1)}>
-            {({getRootProps, getInputProps}) => (
-                <section>
-                    <div {...getRootProps()}>
-                        <input {...getInputProps()} />
-                        <p>Drag 'n' drop some files here, or click to select files</p>
-                    </div>
-                </section>
-            )}
-        </Dropzone>
+        <section className="container">
+            <div {...getRootProps({style})}>
+                <input {...getInputProps()}  />
+                {!isDragAccept ? <p>Drag 'n' drop some files here</p> : <p>Drop</p>}
+            </div>
+            {acceptedFiles.length > 0 ? <p>{acceptedFiles.length} files</p> : <p style={{opacity: 0}}>files</p>}
+        </section>
     )
 }
 
